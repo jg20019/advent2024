@@ -1,3 +1,0 @@
-* Advent
-
-Attempt at completing Advent of Code in Common Lisp.
