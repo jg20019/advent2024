@@ -24,6 +24,11 @@
 
 (defun report-combinations (report)
   "List of reports with one of each level removed with the original report"
-  (cons report
-	(loop for i in report
-	      collecting (remove i report :count 1))))
+  (let ((i -1))
+    (cons report
+	  (loop for level in report
+		collecting (remove level report :count 1 :start (incf i))))))
+
+(count-safe-reports #p"~/advent/src/inputs/day-2.txt"
+		    (lambda (report)
+		      (some #'safe? (report-combinations report))))
