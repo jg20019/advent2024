@@ -2,11 +2,12 @@
   :version "0.0.1"
   :author "John Gibson"
   :license ""
-  :depends-on (:str)
+  :depends-on (:str :alexandria)
   :components ((:module "src"
                 :components
                 ((:file "day1")
-		 (:file "day2"))))
+		 (:file "day2")
+		 (:file "day3"))))
   :description "Advent of Code 2024"
   :in-order-to ((test-op (test-op "advent/tests"))))
 
