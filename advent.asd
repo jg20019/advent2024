@@ -7,7 +7,8 @@
                 :components
                 ((:file "day1")
 		 (:file "day2")
-		 (:file "day3"))))
+		 (:file "day3")
+		 (:file "day4"))))
   :description "Advent of Code 2024"
   :in-order-to ((test-op (test-op "advent/tests"))))
 
