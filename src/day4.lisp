@@ -1,8 +1,8 @@
 (uiop:define-package advent.day4
-  (:use :cl))
+  (:use :cl)
+  (:import-from :alexandria))
 
 (in-package :advent.day4)
-
 
 (defun load-word-search (path)
   "Reads word search into a 2d array"
@@ -16,89 +16,44 @@
 		  :element-type 'standard-char
 		  :initial-contents contents))))
 
+(defun get-location (array row col)
+  (when (array-in-bounds-p array row col)
+    (aref array row col)))
 
-(defvar *found* nil)
+(defun ms? (ch)
+  (or (char= ch #\M) (char= ch #\S)))
+  
+(defun xmas? (word-search a-row a-col)
+  (let* ((top-left (get-location word-search (- a-row 1) (- a-col 1)))
+	 (top-right (get-location word-search (- a-row 1) (+ a-col 1)))
+	 (bottom-left (get-location word-search (+ a-row 1) (- a-col 1)))
+	 (bottom-right (get-location word-search (+ a-row 1) (+ a-col 1))))
 
-(defstruct point row col)
-
-(defun same-point? (p1 p2)
-  (and (= (point-row p1) (point-row p2))
-       (= (point-col p1) (point-col p2))))
-
-(defstruct xmas-location x m a s)
-
-(defun same-location? (a b)
-  (and (same-point? (xmas-location-x a)
-		    (xmas-location-x b))
-       (same-point? (xmas-location-s a)
-		    (xmas-location-s b))))
-
-(defun directions ()
-  (let ((results nil))
-    (dolist (row (list -1 0 1) results)
-      (dolist (col (list -1 0 1))
-	(unless (and (zerop row) (zerop col))
-	  (push (list col row) results))))))
+    ;; get-location returns nil if location is invalid so we check if they had values
+    ;; before comparing characters
+    (and top-left 
+	 top-right
+	 bottom-left
+	 bottom-right
+         ;; Make sure all of them are either m or s
+	 (ms? top-left)
+	 (ms? top-right)
+	 (ms? bottom-left)
+	 (ms? bottom-right)
+	 ;; Make sure they are not equal
+	 ;; since at this point they are either M or S being not equal means
+	 ;; being a valid X-MAS
+	 (char/= top-left bottom-right)
+	 (char/= top-right bottom-left))))
   
 (defun count-xmas (word-search &optional (*found* *found*))
   ;; Searchs for the remaining letters 
-  (labels ((find-xmas (letters r c locations dr dc)
-	     (cond ((null letters)
-		    (let ((locations (nreverse locations)))
-		      (pushnew (make-xmas-location :x (first locations)
-						   :m (second locations)
-						   :a (third locations)
-						   :s (fourth locations)) *found*)))
-		   ((not (array-in-bounds-p word-search r c)) nil)
-		   ((char= (aref word-search r c) (first letters))
-		    (find-xmas (rest letters) (+ r dr) (+ c dc)
-			       (cons (make-point :col c :row r) locations)
-			       dr dc))
-		   (t nil))))
 
-    ;; Loop throw every position in word search 
-    (dotimes (row (array-dimension word-search 0))
+  ;; Loop throw every position in word search 
+  (let ((count 0))
+    (dotimes (row (array-dimension word-search 0) count)
       (dotimes (col (array-dimension word-search 1))
-	(when (char= (aref word-search row col) #\X)
-	  (loop for (dc dr) in (directions)
-		do (find-xmas (list #\M #\A #\S)
-			      (+ row dr) (+ col dc)
-			      (list (make-point :col col :row row))
-			      dr dc)))))
-    ;; After checking every location, count matches
-    (values (length *found*) *found*)))
+	(when (and (char= (aref word-search row col) #\A) (xmas? word-search row col))
+	  (incf count))))))
 
-(count-xmas (load-word-search #p"~/advent/src/inputs/day-4-test.txt"))
-
-(defun show-answers (word-search found)
-  "Copies values in found from word-search into a new array
-   showing what words were found."
-  (let ((arr (make-array (array-dimensions word-search)
-			 :initial-element #\.)))
-    (dolist (match found arr)
-      (let* ((x (xmas-location-x match))
-	     (m (xmas-location-m match))
-	     (a (xmas-location-a match))
-	     (s (xmas-location-s match))
-	     (x-row (point-row x))
-	     (x-col (point-col x))
-	     (m-row (point-row m))
-	     (m-col (point-col m))
-	     (a-row (point-row a))
-	     (a-col (point-col a))
-	     (s-row (point-row s))
-	     (s-col (point-col s)))
-	(setf (aref arr x-row x-col) #\X
-	      (aref arr m-row m-col) #\M
-	      (aref arr a-row a-col) #\A
-	      (aref arr s-row s-col) #\S)))
-    (dotimes (row (array-dimension arr 0))
-      (dotimes (col (array-dimension arr 1))
-	(format t "~a" (aref arr row col)))
-      (format t "~%"))))
-	
-
-(let ((word-search (load-word-search #p"~/advent/src/inputs/day-4.txt")))
-  (multiple-value-bind (c found) (count-xmas word-search) 
-    (format t "Found: ~a matches.~%" c)))
-
+(count-xmas (load-word-search #p"~/advent/src/inputs/day-4.txt"))
