@@ -9,8 +9,10 @@
 (defun parse-rule (line)
   (numbers (str:split "|" line)))
 
-(defun parse-pages (line)
-  (numbers (str:split "," line)))
+(defun parse-pages (input)
+  (loop for line = (read-line input nil)
+	while line
+	collect (numbers (str:split "," line))))
 
 (defun parse-rules (input)
   (let ((rules (make-hash-table :test 'equal)))
@@ -29,16 +31,15 @@
   (every #'(lambda (pages)
 	     (is-valid? rules pages))
 	 (mapcar #'list pages (rest pages))))
-	 
 
-(defun parse-valid-pages (rules input)
-  (let ((valid-pages nil))
-    (loop for line = (read-line input nil)
-	  while line
-	  do (progn (let ((pages (parse-pages line)))
-		      (when (valid-pages? rules pages)
-			(push pages valid-pages)))))
-    (nreverse valid-pages)))
+(defun swap (list x y)
+  (let ((tmp (nth x list)))
+    (setf (nth x list) (nth y list)
+	  (nth y list) tmp)
+    list))
+
+(defun fix-pages (rules pages)
+  (sort pages #'(lambda (a b) (is-valid? rules (list a b)))))
 
 (defun middle (list)
   (nth (truncate (length list) 2) list))
@@ -46,8 +47,10 @@
 (defun load-input (path)
   (with-open-file (input path)
     (let* ((rules (parse-rules input))
-	   (pages (parse-valid-pages rules input))
-	   (middle-page (mapcar #'middle pages)))
+	   (pages (parse-pages input))
+	   (invalid-pages (remove-if (lambda (pages) (valid-pages? rules pages)) pages))
+	   (fixed-pages (mapcar #'(lambda (pages) (fix-pages rules pages)) invalid-pages))
+	   (middle-page (mapcar #'middle fixed-pages)))
       (reduce #'+ middle-page))))
 
 (load-input #p"~/advent/src/inputs/day-5.txt")
